@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGPA Calculator</title>
+    <!--===============================================================================================-->
+	<link rel="icon" type="image/png" href="images/img-01.png"/>
+
+    <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600&display=swap" rel="stylesheet">
+  <!--===============================================================================================-->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap">
+
+</head>
+<body>
+<!-- CSS Styles -->
+  <style>
+    :root {
+      --bg-light: #f9fafe;
+      --bg-dark: #121212;
+      --card-light: #ffffff;
+      --card-dark: #1e1e1e;
+      --text-light: #333;
+      --text-dark: #f5f5f5;
+      --primary: #4a90e2;
+      --accent: #6c63ff;
+      --radius: 12px;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+      margin: 0;
+      padding: 30px;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg-light);
+      color: var(--text-light);
+      transition: all 0.3s ease;
+    }
+
+    body.dark-mode {
+      background-color: var(--bg-dark);
+      color: var(--text-dark);
+    }
+
+
+    h2 {
+      color: #1e3c72;
+      font-size: 85px;
+      font-family: 'Playfair Display', serif;
+      text-align: center;
+
+    }
+
+    .container {
+        position: relative;
+        height: 30vh;
+    }
+
+    .top-right  {
+        position: absolute;
+        right: 20px;
+        font-weight: bold;
+    }
+
+    input, select, button {
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      font-size: 16px;
+      border: 1px solid #ccc;
+      transition: all 0.3s ease;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-family: 'Courier New', Courier, monospace;
+    }
+
+    button:hover {
+      background-color: var(--accent);
+    }
+
+    .semester {
+      background-color: var(--card-light);
+      box-shadow: var(--shadow);
+      border-left: 5px solid var(--primary);
+      padding: 20px;
+      margin-top: 20px;
+      border-radius: var(--radius);
+      animation: fadeIn 0.4s ease;
+    }
+
+    body.dark-mode .semester {
+      background-color: var(--card-dark);
+    }
+
+    .course-input {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .course-input input {
+      width: 130px;
+    }
+
+    #result {
+      margin-top: 30px;
+      padding: 15px;
+      background-color: #eaf4ff;
+      border-left: 5px solid var(--primary);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      font-weight: 600;
+    }
+
+    body.dark-mode #result {
+      background-color: #263142;
+      color: var(--text-dark);
+    }
+
+    .top-controls {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .toggle-theme {
+      margin-left: auto;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+      .course-input {
+        flex-direction: column;
+      }
+
+      .course-input input {
+        width: 100%;
+      }
+
+      .top-controls {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-controls">
+  </div>
+  <div>
+    <h2>CGPA Calculator</h2>
+    <label style="font-family: 'Courier New', Courier, monospace; font-size: xx-large;">Semesters :
+      <input type="number" id="numSemesters" min="1" max="12" />
+    </label>
+    <button onclick="generateSemesterInputs()" style="font-family: 'Courier New', Courier, monospace;font-size: larger;">Generate</button>
+    <div class="container">
+        <button onclick="toggleTheme()" class="top-right">Toggle Dark/Light</button>
+    </div>
+  </div>
+
+  <form id="cgpaForm"></form>
+
+  <div style="margin-top: 20px;">
+    <button onclick="calculateCGPA()">Calculate CGPA</button>
+    <button onclick="exportPDF()">Export PDF</button>
+    <button onclick="exportCSV()">Export CSV</button>
+  </div>
+
+  <div id="result"></div>
+
+  <!-- JS Logic -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    function toggleTheme() {
+      document.body.classList.toggle('dark-mode');
+    }
+
+    function generateSemesterInputs() {
+      const form = document.getElementById('cgpaForm');
+      form.innerHTML = '';
+      const numSemesters = Math.min(12, parseInt(document.getElementById('numSemesters').value));
+      if (!numSemesters || numSemesters <= 0) return;
+
+      for (let s = 1; s <= numSemesters; s++) {
+        const semesterDiv = document.createElement('div');
+        semesterDiv.className = 'semester';
+        semesterDiv.innerHTML = `
+          <h3>Semester ${s}</h3>
+          <label>Courses :
+            <input type="number" min="1" max="15" id="courses_${s}" onchange="generateCourseInputs(${s})">
+          </label>
+          <div id="semester_${s}_courses"></div>
+        `;
+        form.appendChild(semesterDiv);
+      }
+    }
+
+    function generateCourseInputs(semester) {
+      const numCourses = Math.min(15, parseInt(document.getElementById(`courses_${semester}`).value));
+      const courseContainer = document.getElementById(`semester_${semester}_courses`);
+      courseContainer.innerHTML = '';
+
+      for (let c = 1; c <= numCourses; c++) {
+        const div = document.createElement('div');
+        div.className = 'course-input';
+        div.innerHTML = `
+          Course ${c} -
+          Course Unit: <input type="number" step="0.01" min="0" max="4" name="gp_s${semester}_c${c}" required>
+          Grade: <input type="number" step="0.5" min="0" name="cr_s${semester}_c${c}" required>
+        `;
+        courseContainer.appendChild(div);
+      }
+    }
+
+    function calculateCGPA() {
+      let totalPoints = 0, totalCredits = 0, output = '';
+      const numSemesters = Math.min(12, parseInt(document.getElementById('numSemesters').value));
+      for (let s = 1; s <= numSemesters; s++) {
+        const numCourses = Math.min(15, parseInt(document.getElementById(`courses_${s}`).value));
+        if (!numCourses || numCourses <= 0) continue;
+
+        let semPoints = 0, semCredits = 0;
+        for (let c = 1; c <= numCourses; c++) {
+          const gp = parseFloat(document.querySelector(`[name="gp_s${s}_c${c}"]`)?.value || 0);
+          const cr = parseFloat(document.querySelector(`[name="cr_s${s}_c${c}"]`)?.value || 0);
+          semPoints += gp * cr;
+          semCredits += cr;
+        }
+
+        const gpa = semCredits > 0 ? (semPoints / semCredits).toFixed(2) : 0;
+        output += `Semester ${s} GPA: ${gpa}<br>`;
+        totalPoints += semPoints;
+        totalCredits += semCredits;
+      }
+
+      const cgpa = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : 0;
+      output += `<br><strong>Final CGPA: ${cgpa}</strong>`;
+      document.getElementById('result').innerHTML = output;
+    }
+
+    function exportCSV() {
+      const rows = [];
+      const numSemesters = Math.min(12, parseInt(document.getElementById('numSemesters').value));
+      for (let s = 1; s <= numSemesters; s++) {
+        const numCourses = Math.min(15, parseInt(document.getElementById(`courses_${s}`).value));
+        for (let c = 1; c <= numCourses; c++) {
+          const gp = document.querySelector(`[name="gp_s${s}_c${c}"]`)?.value || '';
+          const cr = document.querySelector(`[name="cr_s${s}_c${c}"]`)?.value || '';
+          rows.push([`Semester ${s}`, `Course ${c}`, gp, cr]);
+        }
+      }
+
+      let csv = 'Semester,Course,Grade Point,Credit Hours\n';
+      rows.forEach(r => csv += r.join(',') + '\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'cgpa_report.csv';
+      link.click();
+    }
+
+    async function exportPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(14);
+      doc.text("CGPA Report", 20, 20);
+
+      const resultHtml = document.getElementById('result').innerHTML;
+      const lines = resultHtml.replace(/<br>/g, '\n').replace(/<[^>]+>/g, '').split('\n');
+
+      lines.forEach((line, index) => {
+        doc.text(line.trim(), 20, 30 + index * 10);
+      });
+
+      doc.save('cgpa_report.pdf');
+    }
+  </script>
+    
+</body>
+</html>
